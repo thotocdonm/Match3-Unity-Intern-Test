@@ -19,6 +19,8 @@ public class BoardController : MonoBehaviour
 
     private GameManager m_gameManager;
 
+    private UIMainManager m_uiMenu;
+
     private bool m_isDragging;
 
     private bool m_isCheckBottomCellMatched;
@@ -39,11 +41,13 @@ public class BoardController : MonoBehaviour
 
     private bool m_gameWin;
 
-    public void StartGame(GameManager gameManager, GameSettings gameSettings)
+    public void StartGame(GameManager gameManager, GameSettings gameSettings, UIMainManager uiMenu)
     {
         m_gameManager = gameManager;
 
         m_gameSettings = gameSettings;
+
+        m_uiMenu = uiMenu;
 
         m_gameManager.StateChangedAction += OnGameStateChange;
 
@@ -52,6 +56,55 @@ public class BoardController : MonoBehaviour
         m_board = new Board(this.transform, gameSettings);
 
         Fill();
+
+        if(m_uiMenu.autoPlayMode != AutoPlayMode.None)
+        {
+            Debug.Log("Start Coroutine");
+            StartCoroutine(AutoPlayCoroutine(m_uiMenu.autoPlayMode));
+        }
+
+    }
+
+    private IEnumerator AutoPlayCoroutine(AutoPlayMode mode)
+    {
+        Debug.Log(m_gameManager.State);
+        while(true)
+        {
+            Debug.Log("Run Coroutine");
+            yield return new WaitForSeconds(0.5f);
+            if (mode == AutoPlayMode.Win)
+            {
+                DoAutoWinMove();
+            }
+            else
+            {
+                DoAutoLoseMove();
+            }
+        }
+            
+    }
+
+    private void DoAutoWinMove()
+    {
+        Cell cell = m_board.GetCellCanMatch();
+        Debug.Log(cell);
+        if(cell == null)
+        {
+            return;
+        }
+
+        StartCoroutine(ResolveBottomCell(cell));
+    }
+
+    private void DoAutoLoseMove()
+    {
+        Cell cell = m_board.GetCellCantMatch();
+        if(cell == null)
+        {
+            return;
+        }
+
+        StartCoroutine(ResolveBottomCell(cell));
     }
 
     private void Fill()

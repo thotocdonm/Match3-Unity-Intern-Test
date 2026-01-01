@@ -328,6 +328,56 @@ public class Board
         return true;
     }
 
+    public Cell GetCellCanMatch()
+    {
+        Cell cell = m_bottomCells[0];
+        if(!cell.IsEmpty)
+        {
+            foreach(Cell otherCell in m_cells)
+            {
+                if(otherCell.IsSameType(cell))
+                {
+                    return otherCell;
+                }
+            }
+        }  
+        else 
+        {
+            foreach(Cell otherCell in m_cells)
+            {
+                if(!otherCell.IsEmpty)
+                {
+                    return otherCell;
+                }
+            }
+        }
+        
+
+        return null;
+    }
+
+    public Cell GetCellCantMatch()
+    {
+        Cell bottom = m_bottomCells[0];
+
+        foreach (Cell otherCell in m_cells)
+        {
+            if (otherCell.IsEmpty) continue;
+            if (otherCell == bottom) continue;
+
+            if (bottom.IsEmpty)
+            {
+                return otherCell;
+            }
+
+            if (!otherCell.IsSameType(bottom))
+            {
+                return otherCell;
+            }
+        }
+        return null;
+    }
+
 
     public List<Cell> GetHorizontalMatches(Cell cell)
     {

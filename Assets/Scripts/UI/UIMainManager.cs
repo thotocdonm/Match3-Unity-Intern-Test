@@ -5,11 +5,17 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+public enum AutoPlayMode 
+{
+    Win,Lose,None
+}
 public class UIMainManager : MonoBehaviour
 {
     private IMenu[] m_menuList;
 
     private GameManager m_gameManager;
+
+    public AutoPlayMode autoPlayMode;
 
     private void Awake()
     {
@@ -109,6 +115,19 @@ public class UIMainManager : MonoBehaviour
 
     internal void LoadLevelMoves()
     {
+        autoPlayMode = AutoPlayMode.None;
+        m_gameManager.LoadLevel(GameManager.eLevelMode.MOVES);
+    }
+
+    internal void LoadLevelAutoWin()
+    {
+        autoPlayMode = AutoPlayMode.Win;
+        m_gameManager.LoadLevel(GameManager.eLevelMode.MOVES);
+    }
+
+    internal void LoadLevelAutoLose()
+    {
+        autoPlayMode = AutoPlayMode.Lose;
         m_gameManager.LoadLevel(GameManager.eLevelMode.MOVES);
     }
 

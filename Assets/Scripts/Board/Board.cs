@@ -103,33 +103,71 @@ public class Board
 
     internal void Fill()
     {
+        //calculate each item type count
+        int totalCells = boardSizeX * boardSizeY;
+        int itemTypesCount = Enum.GetValues(typeof(NormalItem.eNormalType)).Length;
+        
+        int validItemTypeCount = totalCells - (totalCells % 3);
+        int minPerType = 3;
+
+        int remaining = validItemTypeCount - itemTypesCount * minPerType;
+
+        List<NormalItem.eNormalType> pool = new List<NormalItem.eNormalType>();
+
+        foreach (NormalItem.eNormalType type in Enum.GetValues(typeof(NormalItem.eNormalType)))
+        {
+            for (int i = 0; i < minPerType; i++)
+                pool.Add(type);
+        }
+
+
+        while (remaining > 0)
+        {
+            foreach (NormalItem.eNormalType type in Enum.GetValues(typeof(NormalItem.eNormalType)))
+            {
+                if (remaining <= 0) break;
+
+                // thêm 3 mỗi lần
+                pool.Add(type);
+                pool.Add(type);
+                pool.Add(type);
+                remaining -= 3;
+            }
+        }
+
+
+        int index = 0;
+
         for (int x = 0; x < boardSizeX; x++)
         {
             for (int y = 0; y < boardSizeY; y++)
             {
                 Cell cell = m_cells[x, y];
                 NormalItem item = new NormalItem();
+                NormalItem.eNormalType type = pool[index++];
 
-                List<NormalItem.eNormalType> types = new List<NormalItem.eNormalType>();
-                if (cell.NeighbourBottom != null)
-                {
-                    NormalItem nitem = cell.NeighbourBottom.Item as NormalItem;
-                    if (nitem != null)
-                    {
-                        types.Add(nitem.ItemType);
-                    }
-                }
+                // List<NormalItem.eNormalType> types = new List<NormalItem.eNormalType>();
+                // if (cell.NeighbourBottom != null)
+                // {
+                //     NormalItem nitem = cell.NeighbourBottom.Item as NormalItem;
+                //     if (nitem != null)
+                //     {
+                //         types.Add(nitem.ItemType);
+                //     }
+                // }
 
-                if (cell.NeighbourLeft != null)
-                {
-                    NormalItem nitem = cell.NeighbourLeft.Item as NormalItem;
-                    if (nitem != null)
-                    {
-                        types.Add(nitem.ItemType);
-                    }
-                }
+                // if (cell.NeighbourLeft != null)
+                // {
+                //     NormalItem nitem = cell.NeighbourLeft.Item as NormalItem;
+                //     if (nitem != null)
+                //     {
+                //         types.Add(nitem.ItemType);
+                //     }
+                // }
 
-                item.SetType(Utils.GetRandomNormalTypeExcept(types.ToArray()));
+                // item.SetType(Utils.GetRandomNormalTypeExcept(types.ToArray()));
+
+                item.SetType(type);
                 item.SetView();
                 item.SetViewRoot(m_root);
 
@@ -270,13 +308,23 @@ public class Board
         }
     }
 
-    private bool IsBottomCellFull()
+    public bool IsBottomCellFull()
     {
         foreach (Cell cell in m_bottomCells)
         {
             if (cell.IsEmpty)
                 return false;
         }
+        return true;
+    }
+
+    public bool IsBoardEmpty()
+    {
+        foreach(Cell cell in m_cells)
+        {
+            if(!cell.IsEmpty) return false;
+        }
+
         return true;
     }
 

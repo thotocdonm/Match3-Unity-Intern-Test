@@ -32,7 +32,7 @@ public class LevelTime : LevelCondition
 
         if (m_time <= -1f)
         {
-            OnConditionComplete();
+            OnConditionComplete(true);
         }
     }
 

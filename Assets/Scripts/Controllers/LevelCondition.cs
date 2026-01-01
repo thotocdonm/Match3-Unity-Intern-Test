@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class LevelCondition : MonoBehaviour
 {
-    public event Action ConditionCompleteEvent = delegate { };
+    public event Action<bool> ConditionCompleteEvent = delegate { };
 
     protected Text m_txt;
 
@@ -29,11 +29,11 @@ public class LevelCondition : MonoBehaviour
 
     protected virtual void UpdateText() { }
 
-    protected void OnConditionComplete()
+    protected void OnConditionComplete(bool isLose)
     {
         m_conditionCompleted = true;
 
-        ConditionCompleteEvent();
+        ConditionCompleteEvent(isLose);
     }
 
     protected virtual void OnDestroy()

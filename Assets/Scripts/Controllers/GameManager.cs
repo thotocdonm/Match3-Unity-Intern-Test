@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviour
         GAME_STARTED,
         PAUSE,
         GAME_OVER,
+        GAME_WIN
     }
 
     private eStateGame m_state;
@@ -97,14 +98,14 @@ public class GameManager : MonoBehaviour
             m_levelCondition.Setup(m_gameSettings.LevelMoves, m_uiMenu.GetLevelConditionView(), this);
         }
 
-        m_levelCondition.ConditionCompleteEvent += GameOver;
+        m_levelCondition.ConditionCompleteEvent += GameComplete;
 
         State = eStateGame.GAME_STARTED;
     }
 
-    public void GameOver()
+    public void GameComplete(bool isLose)
     {
-        StartCoroutine(WaitBoardController());
+        StartCoroutine(WaitBoardController(isLose));
     }
 
     internal void ClearLevel()
@@ -117,7 +118,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private IEnumerator WaitBoardController()
+    private IEnumerator WaitBoardController(bool isLose)
     {
         while (m_boardController.IsBusy)
         {
@@ -126,11 +127,11 @@ public class GameManager : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
 
-        State = eStateGame.GAME_OVER;
+        State = isLose ? eStateGame.GAME_OVER : eStateGame.GAME_WIN;
 
         if (m_levelCondition != null)
         {
-            m_levelCondition.ConditionCompleteEvent -= GameOver;
+            m_levelCondition.ConditionCompleteEvent -= GameComplete;
 
             Destroy(m_levelCondition);
             m_levelCondition = null;

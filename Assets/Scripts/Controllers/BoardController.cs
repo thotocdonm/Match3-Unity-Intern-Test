@@ -9,6 +9,10 @@ public class BoardController : MonoBehaviour
 {
     public event Action OnMoveEvent = delegate { };
 
+    public event Action OnBottomStuck = delegate { };
+
+    public event Action OnBoardEmpty = delegate { };
+
     public bool IsBusy { get; private set; }
 
     private Board m_board;
@@ -33,6 +37,8 @@ public class BoardController : MonoBehaviour
 
     private bool m_gameOver;
 
+    private bool m_gameWin;
+
     public void StartGame(GameManager gameManager, GameSettings gameSettings)
     {
         m_gameManager = gameManager;
@@ -51,7 +57,8 @@ public class BoardController : MonoBehaviour
     private void Fill()
     {
         m_board.Fill();
-        FindMatchesAndCollapse();
+        m_board.Shuffle();
+        // FindMatchesAndCollapse();
     }
 
     private void OnGameStateChange(GameManager.eStateGame state)
@@ -66,7 +73,10 @@ public class BoardController : MonoBehaviour
                 break;
             case GameManager.eStateGame.GAME_OVER:
                 m_gameOver = true;
-                StopHints();
+                // StopHints();
+                break;
+            case GameManager.eStateGame.GAME_WIN:
+                m_gameWin = true;
                 break;
         }
     }
@@ -76,6 +86,7 @@ public class BoardController : MonoBehaviour
     {
         if (m_gameOver) return;
         if (IsBusy) return;
+        if (m_gameWin) return;
 
         // if (!m_hintIsShown)
         // {
@@ -282,10 +293,20 @@ public class BoardController : MonoBehaviour
 
         if(cellAfterMove != null)
         {
+
+            if(m_board.IsBoardEmpty())
+            {
+                OnBoardEmpty();
+            }
+
             List<Cell> matches = m_board.GetHorizontalMatches(cellAfterMove);
 
             if (matches.Count < m_gameSettings.MatchesMin)
             {
+                if(m_board.IsBottomCellFull())
+                {
+                    OnBottomStuck();
+                }
                 yield break;
             }
             else 

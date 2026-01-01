@@ -18,23 +18,39 @@ public class LevelMoves : LevelCondition
 
         m_board = board;
 
-        m_board.OnMoveEvent += OnMove;
+        // m_board.OnMoveEvent += OnMove;
+
+        m_board.OnBottomStuck += OnBottomStuck;
+        m_board.OnBoardEmpty += OnBoardEmpty;
+        
 
         UpdateText();
     }
 
-    private void OnMove()
+    // private void OnMove()
+    // {
+    //     if (m_conditionCompleted) return;
+
+    //     m_moves--;
+
+    //     UpdateText();
+
+    //     if(m_moves <= 0)
+    //     {
+    //         OnConditionComplete();
+    //     }
+    // }
+
+    private void OnBottomStuck()
     {
-        if (m_conditionCompleted) return;
+        if(m_conditionCompleted) return;
+        OnConditionComplete(true);
+    }
 
-        m_moves--;
-
-        UpdateText();
-
-        if(m_moves <= 0)
-        {
-            OnConditionComplete();
-        }
+    private void OnBoardEmpty()
+    {
+        if(m_conditionCompleted) return;
+        OnConditionComplete(false);
     }
 
     protected override void UpdateText()
@@ -44,7 +60,9 @@ public class LevelMoves : LevelCondition
 
     protected override void OnDestroy()
     {
-        if (m_board != null) m_board.OnMoveEvent -= OnMove;
+        // if (m_board != null) m_board.OnMoveEvent -= OnMove;
+        if(m_board != null) m_board.OnBottomStuck -= OnBottomStuck;
+        if(m_board != null) m_board.OnBoardEmpty -= OnBoardEmpty;
 
         base.OnDestroy();
     }

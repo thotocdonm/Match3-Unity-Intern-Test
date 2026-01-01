@@ -19,11 +19,17 @@ public class Board
 
     private int boardSizeY;
 
+    private int bottomCellX;
+
     private Cell[,] m_cells;
+
+    private Cell[] m_bottomCells;
 
     private Transform m_root;
 
     private int m_matchMin;
+
+    
 
     public Board(Transform transform, GameSettings gameSettings)
     {
@@ -34,7 +40,10 @@ public class Board
         this.boardSizeX = gameSettings.BoardSizeX;
         this.boardSizeY = gameSettings.BoardSizeY;
 
+        bottomCellX = 5;
+
         m_cells = new Cell[boardSizeX, boardSizeY];
+        m_bottomCells = new Cell[bottomCellX];
 
         CreateBoard();
     }
@@ -58,6 +67,19 @@ public class Board
             }
         }
 
+        //setup bottom cell
+        for(int x = 0; x < bottomCellX; x++)
+        {
+            GameObject go = GameObject.Instantiate(prefabBG);
+            go.transform.position = origin + new Vector3(x - 0.5f, -1f, 0f);
+            go.transform.SetParent(m_root);
+
+            Cell cell = go.GetComponent<Cell>();
+            cell.Setup(x, int.MaxValue);
+
+            m_bottomCells[x] = cell;
+        }
+
         //set neighbours
         for (int x = 0; x < boardSizeX; x++)
         {
@@ -68,6 +90,13 @@ public class Board
                 if (y > 0) m_cells[x, y].NeighbourBottom = m_cells[x, y - 1];
                 if (x > 0) m_cells[x, y].NeighbourLeft = m_cells[x - 1, y];
             }
+        }
+
+        //set neighbours for bottom cells
+        for (int x = 0; x < bottomCellX; x++)
+        {
+            if(x + 1 < bottomCellX) m_bottomCells[x].NeighbourRight = m_bottomCells[x + 1];
+            if (x > 0) m_bottomCells[x].NeighbourLeft = m_bottomCells[x - 1];
         }
 
     }
@@ -181,6 +210,76 @@ public class Board
         item.View.DOMove(cell2.transform.position, 0.3f);
         item2.View.DOMove(cell1.transform.position, 0.3f).OnComplete(() => { if (callback != null) callback(); });
     }
+    
+    public Cell MoveToBottomCell(Cell cellToMove)
+    {
+
+        if(IsBottomCellFull()) return null;
+        if(cellToMove.IsEmpty) return null;
+
+        Item item = cellToMove.Item;
+        Debug.Log(item);
+        cellToMove.Free();
+        Cell availableBottomCell = GetAvailableBottomCell(item);
+        if(availableBottomCell != null)
+        {
+            availableBottomCell.Assign(item);
+            item.View.DOMove(availableBottomCell.transform.position, 0.3f);
+        }
+        return availableBottomCell;
+
+    }
+
+    private Cell GetAvailableBottomCell(Item item)
+    {
+        for(int i = m_bottomCells.Length - 2; i >= 0; i--)
+        {
+            Cell currentCell = m_bottomCells[i];
+            if(!currentCell.IsEmpty && currentCell.Item.IsSameType(item))
+            {
+                if(m_bottomCells[i + 1].IsEmpty)
+                {
+                    return m_bottomCells[i + 1];
+                }
+                ShiftNextCellToRight(i);
+                return m_bottomCells[i + 1];
+            }
+        }
+
+        foreach(Cell bottomCell in m_bottomCells)
+        {
+            if(bottomCell.IsEmpty)
+            {
+                return bottomCell;
+            }
+        }
+        return null;
+    }
+
+    private void ShiftNextCellToRight(int index)
+    {
+        for (int i = m_bottomCells.Length - 2; i >= index; i--)
+        {
+            if (m_bottomCells[i + 1].IsEmpty) continue;
+
+            Item item = m_bottomCells[i + 1].Item;
+            m_bottomCells[i + 1].Free();
+
+            m_bottomCells[i + 2].Assign(item);
+            item.View.DOMove(m_bottomCells[i + 2].transform.position, 0.3f);
+        }
+    }
+
+    private bool IsBottomCellFull()
+    {
+        foreach (Cell cell in m_bottomCells)
+        {
+            if (cell.IsEmpty)
+                return false;
+        }
+        return true;
+    }
+
 
     public List<Cell> GetHorizontalMatches(Cell cell)
     {
@@ -657,6 +756,31 @@ public class Board
                 holder.Assign(item);
                 item.View.DOMove(holder.transform.position, 0.3f);
             }
+        }
+    }
+
+    internal void ShiftLeftBottomCells()
+    {
+        int shifts = 0;
+        for(int i = 0; i< m_bottomCells.Length; i++)
+        {
+            Cell currentCell = m_bottomCells[i];
+
+            if(currentCell.IsEmpty)
+            {
+                shifts++;
+                continue;
+            }
+
+            if(shifts == 0) continue;
+
+            Cell holder = m_bottomCells[i - shifts];
+
+            Item item = currentCell.Item;
+            currentCell.Free();
+
+            holder.Assign(item);
+            item.View.DOMove(holder.transform.position, 0.3f);
         }
     }
 

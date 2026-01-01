@@ -40,6 +40,12 @@ public class Cell : MonoBehaviour
 
     public void Assign(Item item)
     {
+        if (item == null)
+        {
+            Debug.LogError("Assign called with NULL item");
+            return;
+        }
+
         Item = item;
         Item.SetCell(this);
     }

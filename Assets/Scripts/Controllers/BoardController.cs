@@ -17,6 +17,8 @@ public class BoardController : MonoBehaviour
 
     private bool m_isDragging;
 
+    private bool m_isCheckBottomCellMatched;
+
     private Camera m_cam;
 
     private Collider2D m_hitCollider;
@@ -75,23 +77,32 @@ public class BoardController : MonoBehaviour
         if (m_gameOver) return;
         if (IsBusy) return;
 
-        if (!m_hintIsShown)
-        {
-            m_timeAfterFill += Time.deltaTime;
-            if (m_timeAfterFill > m_gameSettings.TimeForHint)
-            {
-                m_timeAfterFill = 0f;
-                ShowHint();
-            }
-        }
+        // if (!m_hintIsShown)
+        // {
+        //     m_timeAfterFill += Time.deltaTime;
+        //     if (m_timeAfterFill > m_gameSettings.TimeForHint)
+        //     {
+        //         m_timeAfterFill = 0f;
+        //         ShowHint();
+        //     }
+        // }
 
         if (Input.GetMouseButtonDown(0))
         {
             var hit = Physics2D.Raycast(m_cam.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
             if (hit.collider != null)
             {
-                m_isDragging = true;
                 m_hitCollider = hit.collider;
+
+                if(!m_isDragging)
+                {
+                    Cell cell = m_hitCollider.GetComponent<Cell>();
+                    StartCoroutine(ResolveBottomCell(cell));
+                    
+                }
+                m_isDragging = true;
+                
+                
             }
         }
 
@@ -100,35 +111,47 @@ public class BoardController : MonoBehaviour
             ResetRayCast();
         }
 
-        if (Input.GetMouseButton(0) && m_isDragging)
+        
+
+        // if (Input.GetMouseButton(0) && m_isDragging)
+        // {
+        //     var hit = Physics2D.Raycast(m_cam.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+        //     if (hit.collider != null)
+        //     {
+        //         if (m_hitCollider != null && m_hitCollider != hit.collider)
+        //         {
+        //             StopHints();
+
+        //             Cell c1 = m_hitCollider.GetComponent<Cell>();
+        //             Cell c2 = hit.collider.GetComponent<Cell>();
+        //             if (AreItemsNeighbor(c1, c2))
+        //             {
+        //                 IsBusy = true;
+        //                 SetSortingLayer(c1, c2);
+        //                 m_board.Swap(c1, c2, () =>
+        //                 {
+        //                     FindMatchesAndCollapse(c1, c2);
+        //                 });
+
+        //                 ResetRayCast();
+        //             }
+        //         }
+        //     }
+        //     else
+        //     {
+        //         ResetRayCast();
+        //     }
+        // }
+    }
+
+    private void CollapseBottomCellMatches(List<Cell> matches)
+    {
+        for (int i = 0; i < matches.Count; i++)
         {
-            var hit = Physics2D.Raycast(m_cam.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
-            if (hit.collider != null)
-            {
-                if (m_hitCollider != null && m_hitCollider != hit.collider)
-                {
-                    StopHints();
-
-                    Cell c1 = m_hitCollider.GetComponent<Cell>();
-                    Cell c2 = hit.collider.GetComponent<Cell>();
-                    if (AreItemsNeighbor(c1, c2))
-                    {
-                        IsBusy = true;
-                        SetSortingLayer(c1, c2);
-                        m_board.Swap(c1, c2, () =>
-                        {
-                            FindMatchesAndCollapse(c1, c2);
-                        });
-
-                        ResetRayCast();
-                    }
-                }
-            }
-            else
-            {
-                ResetRayCast();
-            }
+            matches[i].ExplodeItem();
         }
+
+        StartCoroutine(ShifLeftBottomCellCoroutine());
     }
 
     private void ResetRayCast()
@@ -243,6 +266,34 @@ public class BoardController : MonoBehaviour
         yield return new WaitForSeconds(0.2f);
 
         FindMatchesAndCollapse();
+    }
+
+    private IEnumerator ShifLeftBottomCellCoroutine()
+    {
+        m_board.ShiftLeftBottomCells();
+
+        yield return new WaitForSeconds(0.2f);
+    }
+
+    private IEnumerator ResolveBottomCell(Cell cell)
+    {
+        Cell cellAfterMove = m_board.MoveToBottomCell(cell);
+        yield return new WaitForSeconds(0.3f);
+
+        if(cellAfterMove != null)
+        {
+            List<Cell> matches = m_board.GetHorizontalMatches(cellAfterMove);
+
+            if (matches.Count < m_gameSettings.MatchesMin)
+            {
+                yield break;
+            }
+            else 
+            {
+                CollapseBottomCellMatches(matches);
+            }
+                        
+        }
     }
 
     private IEnumerator RefillBoardCoroutine()
